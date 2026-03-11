@@ -140,6 +140,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.ui.util)
     implementation(libs.androidx.navigation.compose)
     // compose-material3
@@ -156,6 +157,7 @@ dependencies {
     implementation(libs.google.accompanist.permissions)
     // performance
     debugImplementation(libs.squareup.leakcanary)
+    debugImplementation(libs.androidx.compose.ui.tooling)
     // other
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.constraintlayout.compose)

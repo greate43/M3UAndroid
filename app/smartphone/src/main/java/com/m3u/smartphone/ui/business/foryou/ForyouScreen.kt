@@ -5,13 +5,8 @@ import android.view.KeyEvent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,27 +31,21 @@ import com.m3u.business.foryou.Recommend
 import com.m3u.core.architecture.preferences.PreferencesKeys
 import com.m3u.core.architecture.preferences.mutablePreferenceOf
 import com.m3u.core.architecture.preferences.preferenceOf
-import com.m3u.core.foundation.ui.composableOf
 import com.m3u.core.foundation.ui.thenIf
 import com.m3u.core.util.basic.title
 import com.m3u.core.wrapper.Resource
 import com.m3u.data.database.model.Channel
 import com.m3u.data.database.model.Playlist
-import com.m3u.data.database.model.PlaylistWithCount
 import com.m3u.data.database.model.isSeries
 import com.m3u.data.service.MediaCommand
 import com.m3u.i18n.R.string
+import com.m3u.smartphone.ui.business.foryou.components.ForyouHomeContent
 import com.m3u.smartphone.ui.business.foryou.components.HeadlineBackground
-import com.m3u.smartphone.ui.business.foryou.components.PlaylistGallery
-import com.m3u.smartphone.ui.business.foryou.components.recommend.RecommendGallery
 import com.m3u.smartphone.ui.common.helper.Action
 import com.m3u.smartphone.ui.common.helper.LocalHelper
 import com.m3u.smartphone.ui.common.helper.Metadata
 import com.m3u.smartphone.ui.material.components.EpisodesBottomSheet
-import com.m3u.smartphone.ui.material.components.MediaSheet
-import com.m3u.smartphone.ui.material.components.MediaSheetValue
 import com.m3u.smartphone.ui.material.ktx.interceptVolumeEvent
-import com.m3u.smartphone.ui.material.model.LocalSpacing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -84,9 +73,6 @@ fun ForyouRoute(
     val episodes by viewModel.episodes.collectAsStateWithLifecycle()
 
     val series: Channel? by viewModel.series.collectAsStateWithLifecycle()
-    val subscribingPlaylistUrls by viewModel.subscribingPlaylistUrls.collectAsStateWithLifecycle()
-    val refreshingEpgUrls by viewModel.refreshingEpgUrls.collectAsStateWithLifecycle(emptyList())
-
     LifecycleResumeEffect(title) {
         Metadata.title = AnnotatedString(title.title())
         Metadata.color = Color.Unspecified
@@ -107,8 +93,6 @@ fun ForyouRoute(
     Box(modifier) {
         ForyouScreen(
             playlists = playlists,
-            subscribingPlaylistUrls = subscribingPlaylistUrls,
-            refreshingEpgUrls = refreshingEpgUrls,
             specs = specs,
             rowCount = rowCount,
             contentPadding = contentPadding,
@@ -128,8 +112,7 @@ fun ForyouRoute(
                     }
                 }
             },
-            navigateToPlaylistConfiguration = navigateToPlaylistConfiguration,
-            onUnsubscribePlaylist = viewModel::onUnsubscribePlaylist,
+            observeChannels = viewModel::observeChannels,
             modifier = Modifier
                 .fillMaxSize()
                 .thenIf(godMode) {
@@ -168,14 +151,11 @@ fun ForyouRoute(
 private fun ForyouScreen(
     rowCount: Int,
     playlists: Map<Playlist, Int>,
-    subscribingPlaylistUrls: List<String>,
-    refreshingEpgUrls: List<String>,
     specs: List<Recommend.Spec>,
     contentPadding: PaddingValues,
     navigateToPlaylist: (Playlist) -> Unit,
     onPlayChannel: (Channel) -> Unit,
-    navigateToPlaylistConfiguration: (Playlist) -> Unit,
-    onUnsubscribePlaylist: (playlistUrl: String) -> Unit,
+    observeChannels: (String) -> kotlinx.coroutines.flow.Flow<List<Channel>>,
     modifier: Modifier = Modifier
 ) {
     val configuration = LocalConfiguration.current
@@ -188,9 +168,6 @@ private fun ForyouScreen(
             ORIENTATION_PORTRAIT -> rowCount
             else -> rowCount + 2
         }
-    }
-    var mediaSheetValue: MediaSheetValue.ForyouScreen by remember {
-        mutableStateOf(MediaSheetValue.ForyouScreen())
     }
 
     LaunchedEffect(headlineSpec) {
@@ -208,36 +185,16 @@ private fun ForyouScreen(
 
     Box(modifier) {
         HeadlineBackground()
-        val header = @Composable {
-            RecommendGallery(
-                specs = specs,
-                navigateToPlaylist = navigateToPlaylist,
-                onPlayChannel = onPlayChannel,
-                onSpecChanged = { spec -> headlineSpec = spec },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        PlaylistGallery(
+        ForyouHomeContent(
             rowCount = actualRowCount,
             playlists = playlists,
-            subscribingPlaylistUrls = subscribingPlaylistUrls,
-            refreshingEpgUrls = refreshingEpgUrls,
-            onClick = navigateToPlaylist,
-            onLongClick = { mediaSheetValue = MediaSheetValue.ForyouScreen(it) },
-            header = composableOf(specs.isNotEmpty(), header),
+            specs = specs,
+            navigateToPlaylist = navigateToPlaylist,
+            onPlayChannel = onPlayChannel,
+            observeChannels = observeChannels,
+            onSpecChanged = { spec -> headlineSpec = spec },
             contentPadding = contentPadding,
             modifier = Modifier.fillMaxSize()
-        )
-        MediaSheet(
-            value = mediaSheetValue,
-            onUnsubscribePlaylist = {
-                onUnsubscribePlaylist(it.url)
-                mediaSheetValue = MediaSheetValue.ForyouScreen()
-            },
-            onPlaylistConfiguration = navigateToPlaylistConfiguration,
-            onDismissRequest = {
-                mediaSheetValue = MediaSheetValue.ForyouScreen()
-            }
         )
     }
 }

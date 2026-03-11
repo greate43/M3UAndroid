@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,8 +115,10 @@ private fun RecommendItemContent(
 ) {
     val context = LocalContext.current
     val spacing = LocalSpacing.current
+    val isInPreview = LocalInspectionMode.current
 
-    val noPictureMode by preferenceOf(PreferencesKeys.NO_PICTURE_MODE)
+    val noPictureMode = if (isInPreview) true
+    else preferenceOf(PreferencesKeys.NO_PICTURE_MODE).value
 
     Box(Modifier.fillMaxSize()) {
         val info = @Composable {

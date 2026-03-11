@@ -40,7 +40,7 @@ import kotlin.time.toDuration
 @HiltViewModel
 class ForyouViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
-    channelRepository: ChannelRepository,
+    private val channelRepository: ChannelRepository,
     programmeRepository: ProgrammeRepository,
     private val playerManager: PlayerManager,
     settings: Settings,
@@ -124,4 +124,7 @@ class ForyouViewModel @Inject constructor(
 
     suspend fun getPlaylist(playlistUrl: String): Playlist? =
         playlistRepository.get(playlistUrl)
+
+    fun observeChannels(playlistUrl: String): Flow<List<Channel>> =
+        channelRepository.observeAllByPlaylistUrl(playlistUrl)
 }
